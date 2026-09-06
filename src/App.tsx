@@ -8,6 +8,8 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { Auth } from './components/Auth';
 import { Dashboard } from './components/Dashboard';
+import { APIProvider } from '@vis.gl/react-google-maps';
+
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
@@ -58,5 +60,13 @@ export default function App() {
     );
   }
 
-  return user ? <Dashboard /> : <Auth />;
+  
+  const content = user ? <Dashboard /> : <Auth />;
+  
+  return (
+    <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "dummy"} solutionChannel="gmp_mcp_codeassist_v1_aistudio">
+      {content}
+    </APIProvider>
+  );
+
 }

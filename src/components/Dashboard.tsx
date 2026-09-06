@@ -8,21 +8,49 @@ import Markdown from 'react-markdown';
 import { CounsellorView } from './CounsellorView';
 import { FriendsView } from './FriendsView';
 import { ChatView } from './ChatView';
+import { AdminView } from './AdminView';
+import { Shield } from 'lucide-react';
 import { SettingsView } from './SettingsView';
 import { WeeklyReflectionView } from './WeeklyReflectionView';
+import { LocationPicker } from './LocationPicker';
+import { LocationData } from '../types';
+import { MapPin } from 'lucide-react';
+
 
 export function Dashboard() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'journal' | 'reflection' | 'counsellor' | 'friends' | 'chat' | 'settings'>('journal');
+  const [activeTab, setActiveTab] = useState<'journal' | 'reflection' | 'counsellor' | 'friends' | 'chat' | 'settings' | 'admin'>('journal');
   const [isRecording, setIsRecording] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   
   const user = auth.currentUser;
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const checkAdmin = async () => {
+      try {
+        if (user.email === 'soubhikkumardey@gmail.com') {
+          setIsAdmin(true);
+          return;
+        }
+        const { getDoc, doc } = require('firebase/firestore');
+        const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+        setIsAdmin(adminDoc.exists());
+      } catch (err) {
+        console.error('Error checking admin status:', err);
+      }
+    };
+    checkAdmin();
+  }, [user]);
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -142,7 +170,9 @@ export function Dashboard() {
     if (!input.trim() || !user || loading) return;
 
     const userPrompt = input.trim();
+    const entryLocation = selectedLocation;
     setInput('');
+    setSelectedLocation(null);
     setLoading(true);
 
     try {
@@ -166,6 +196,7 @@ export function Dashboard() {
       await addDoc(entriesRef, {
         userId: user.uid,
         prompt: userPrompt,
+        location: entryLocation || null,
         response: data.text,
         mood: data.mood || "Neutral",
         createdAt: Date.now(),
@@ -193,6 +224,7 @@ export function Dashboard() {
   const exportEntries = () => {
     const dataStr = JSON.stringify(entries, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
@@ -274,6 +306,16 @@ export function Dashboard() {
             <MessageSquare size={16} />
             Chat
           </button>
+
+          {isAdmin && (
+            <button 
+              onClick={() => setActiveTab('admin')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${activeTab === 'admin' ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 dark:bg-neutral-900'}`}
+            >
+              <Shield size={16} />
+              Admin
+            </button>
+          )}
           <button 
             onClick={() => setActiveTab('settings')}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${activeTab === 'settings' ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 dark:bg-neutral-900'}`}
@@ -372,6 +414,15 @@ export function Dashboard() {
             >
               <MessageSquare size={18} />
             </button>
+
+            {isAdmin && (
+              <button 
+                onClick={() => setActiveTab('admin')}
+                className={`p-2 rounded-lg ${activeTab === 'admin' ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white' : 'text-neutral-500 dark:text-neutral-400'}`}
+              >
+                <Shield size={18} />
+              </button>
+            )}
             <button 
               onClick={() => setActiveTab('settings')}
               className={`p-2 rounded-lg ${activeTab === 'settings' ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white' : 'text-neutral-500 dark:text-neutral-400'}`}
@@ -384,7 +435,11 @@ export function Dashboard() {
           </div>
         </header>
 
-        {activeTab === 'settings' ? (
+        
+        {activeTab === 'admin' && isAdmin ? (
+          <AdminView />
+        ) : activeTab === 'settings' ? (
+
           <SettingsView />
         ) : activeTab === 'reflection' ? (
           <WeeklyReflectionView entries={entries} />
@@ -465,6 +520,8 @@ export function Dashboard() {
                     rows={1}
                   />
                   <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                    
+                    <LocationPicker onLocationSelect={setSelectedLocation} selectedLocation={selectedLocation} />
                     <button
                       type="button"
                       onClick={() => setIsPublic(!isPublic)}

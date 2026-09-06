@@ -53,6 +53,40 @@ async function generateContentWithFallback(contents, config) {
   throw lastError;
 }
 
+
+function dispatchExternalNotification(parsedData, userPrompt) {
+  // Fire and forget logic - non-blocking
+  setImmediate(async () => {
+    try {
+      // 4. Payload Sanitization: Provide a summary without leaking PII 
+      // where possible, relying on the 'mood' and a generic alert.
+      const safePayload = {
+        content: `🔔 **Urgent Journal Alert** 🔔\nAn entry was flagged as highly urgent/distressed.\n**Mood Detected**: ${parsedData.mood || 'Unknown'}\n**AI Reflection**: ${parsedData.text}`
+      };
+
+      if (process.env.DISCORD_WEBHOOK_URL) {
+        await fetch(process.env.DISCORD_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(safePayload)
+        });
+      }
+
+      if (process.env.SLACK_WEBHOOK_URL) {
+        await fetch(process.env.SLACK_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: safePayload.content
+          })
+        });
+      }
+    } catch (e) {
+      console.error('Failed to dispatch external notification:', e);
+    }
+  });
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -84,16 +118,23 @@ async function startServer() {
             mood: {
               type: Type.STRING,
               description: "A single word summarizing the sentiment or mood of the user's entry (e.g., Happy, Reflective, Stressed, Anxious, Excited)."
+            },
+            isUrgent: {
+              type: Type.BOOLEAN,
+              description: "Set to true if the entry indicates a severe crisis, immediate danger, or extremely high distress requiring external notification."
             }
           },
-          required: ["text", "mood"]
+          required: ["text", "mood", "isUrgent"]
         }
       });
 
-      let parsed = { text: "", mood: "Neutral" };
+      let parsed = { text: "", mood: "Neutral", isUrgent: false };
       try {
         if (response?.text) {
           parsed = JSON.parse(response.text);
+          if (parsed.isUrgent) {
+            dispatchExternalNotification(parsed, messages);
+          }
         }
       } catch (e) {
         console.error("Failed to parse Gemini response", e);

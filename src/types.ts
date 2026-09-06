@@ -1,3 +1,11 @@
+
+export interface LocationData {
+  name: string;
+  address?: string;
+  lat: number;
+  lng: number;
+}
+
 export interface JournalEntry {
   id: string;
   userId: string;
@@ -6,6 +14,7 @@ export interface JournalEntry {
   mood?: string;
   createdAt: number;
   isPublic?: boolean;
+  location?: LocationData;
 }
 
 export interface CounsellorMessage {
