@@ -6,10 +6,22 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+let aiClient;
+function getAI() {
+  if (!aiClient) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
+      console.warn("GEMINI_API_KEY is missing. AI features will fail.");
+    }
+    aiClient = new GoogleGenAI({ apiKey: key || "dummy" });
+  }
+  return aiClient;
+}
 
 // Helper for resilient model fallback ladder
-async function generateContentWithFallback(contents: any, config: any) {
+async function generateContentWithFallback(contents, config) {
+  const ai = getAI();
   const models = [
     "gemini-3.8-flash",
     "gemini-3.1-flash-lite",
@@ -20,7 +32,7 @@ async function generateContentWithFallback(contents: any, config: any) {
   let lastError: any;
   for (let i = 0; i < models.length; i++) {
     try {
-      return await ai.models.generateContent({
+      return await getAI().models.generateContent({
         model: models[i],
         contents,
         config
@@ -122,7 +134,7 @@ Act as a counsellor providing realistic advice. If you observe unrealistic ambit
       if (responseText) {
         try {
           // Use the Modality enum from @google/genai, or just string 'AUDIO'
-          const ttsResponse = await ai.models.generateContent({
+          const ttsResponse = await getAI().models.generateContent({
             model: "gemini-3.1-flash-tts-preview",
             contents: responseText,
             config: {
