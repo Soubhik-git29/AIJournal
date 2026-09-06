@@ -4,11 +4,19 @@ A full-stack, AI-powered journaling application built with React, Vite, Express,
 
 ## Features
 
-- **Intelligent Journaling**: Log thoughts, track moods automatically with Gemini AI, and optionally tag locations using Google Maps.
-- **AI Counsellor**: Chat with an empathetic, grounded AI counsellor that remembers your past 7 days of journal entries. Supports Text-to-Speech (TTS).
+- **Secure Authentication**: Google Sign-In via Firebase Auth.
+- **Private Storage**: User-isolated entries stored in Cloud Firestore.
+- **Voice & Text Journaling**: Log your daily thoughts using text input or native voice-to-text transcription.
+- **Intelligent Journaling**: Track moods automatically with Gemini AI, and optionally tag locations using Google Maps.
+- **AI Voice Counsellor**: Have conversational sessions with an empathetic AI that provides guidance and responds with synthesized voice audio, contextually aware of your past journal entries.
+- **Social Connectivity (Friends System)**: Search for users, send friend requests, and manage your network.
+- **Real-Time Chat**: Secure, real-time messaging with your friends.
+- **Voice & Video Calling**: Built-in peer-to-peer voice and video calls for direct communication.
+- **Personalization**: Toggleable Dark/Light mode and customizable chat interface themes.
+- **Weekly AI Reflections**: Intelligent journaling summaries and behavioral pattern recognition across your past entries using the Gemini API.
 - **External Notifications (Slack/Discord)**: Asynchronous webhook dispatching to alert external channels when a journal entry indicates severe distress.
 - **Admin Dashboard & RBAC**: Role-based access control with a dedicated dashboard to manage user privileges securely based on Firestore admin claims.
-- **Secure Full-Stack Architecture**: Backend proxy for AI generation, zero-leaked credentials, and strict database security rules.
+- **Secure Full-Stack Architecture & Resilient AI Pipeline**: Backend proxy for AI generation, zero-leaked credentials, strict database security rules, and implements model fallback ladders for high availability.
 
 ## Prerequisites
 
