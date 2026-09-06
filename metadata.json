@@ -1,0 +1,6 @@
+{
+  "name": "Reflect AI Journal",
+  "description": "A private, AI-powered journaling application with Google Sign-In and Gemini AI summaries.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
