@@ -250,8 +250,8 @@ export function Dashboard() {
           behavior: 'smooth'
         });
         
-        el.classList.add('bg-neutral-100 dark:bg-neutral-800', 'transition-colors', 'duration-500');
-        setTimeout(() => el.classList.remove('bg-neutral-100 dark:bg-neutral-800'), 2000);
+        el.classList.add('bg-neutral-100', 'dark:bg-neutral-800', 'transition-colors', 'duration-500');
+        setTimeout(() => el.classList.remove('bg-neutral-100', 'dark:bg-neutral-800'), 2000);
       } else if (el) {
          // Fallback if container not found
          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -469,11 +469,25 @@ export function Dashboard() {
                           <div className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 p-5 rounded-2xl rounded-tr-sm text-[15px] leading-relaxed shadow-sm">
                             {entry.prompt}
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider text-neutral-400">
-                            {entry.isPublic ? (
-                              <><Globe size={10} /> Public</>
-                            ) : (
-                              <><Lock size={10} /> Private</>
+                          <div className="flex flex-wrap items-center justify-end gap-3 text-[10px] uppercase font-bold tracking-wider text-neutral-400 mt-1">
+                            <span className="flex items-center gap-1">
+                              {entry.isPublic ? <><Globe size={10} /> Public</> : <><Lock size={10} /> Private</>}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar size={10} />
+                              {format(entry.createdAt, 'MMM d, h:mm a')}
+                            </span>
+                            {entry.mood && (
+                              <span className="flex items-center gap-1">
+                                <Sparkles size={10} />
+                                {entry.mood}
+                              </span>
+                            )}
+                            {entry.location && (
+                              <span className="flex items-center gap-1 text-blue-500/80">
+                                <MapPin size={10} />
+                                {entry.location.name || entry.location.address || "Unknown Location"}
+                              </span>
                             )}
                           </div>
                         </div>

@@ -76,10 +76,16 @@ export function FriendsView() {
     if (!searchQuery.trim() || !currentUser) return;
     
     const q = query(collection(db, 'users')); // In a real app we'd use algolia/typesense or limit
-    const snapshot = await getDocs(q);
-    const results = snapshot.docs
+    const qSnapshot = await getDocs(q);
+    const results = qSnapshot.docs
       .map(doc => doc.data() as UserProfile)
-      .filter(u => u.id !== currentUser.uid && (u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase())));
+      .filter(u => {
+        if (u.id === currentUser.uid) return false;
+        const q = searchQuery.toLowerCase();
+        const matchName = u.displayName ? u.displayName.toLowerCase().includes(q) : false;
+        const matchEmail = u.email ? u.email.toLowerCase().includes(q) : false;
+        return matchName || matchEmail;
+      });
       
     setSearchResults(results);
   };

@@ -17,15 +17,13 @@ export function LocationPicker({ onLocationSelect, selectedLocation }: LocationP
   useEffect(() => {
     if (!placesLibrary || !isOpen || !containerRef.current) return;
     
-    if (!autocompleteElementRef.current) {
-      // Create the element imperatively
+    if (autocompleteElementRef.current) {
+      containerRef.current.appendChild(autocompleteElementRef.current);
+    } else {
       const element = new placesLibrary.PlaceAutocompleteElement();
       element.id = 'location-picker';
       
-      // Wait, is it PlaceAutocompleteElement? Let's check documentation via rpc if unsure, but the skill says:
-      // "PlaceAutocompleteElement (<gmp-place-autocomplete>): Drop-in web component."
-      
-      element.addEventListener('gmp-placeselect', (e: any) => {
+      element.addEventListener('gmp-placeselect', async (e: any) => {
         const place = e.place;
         if (!place) {
           onLocationSelect(null);
@@ -33,18 +31,54 @@ export function LocationPicker({ onLocationSelect, selectedLocation }: LocationP
           return;
         }
         
-        // We need to fetch fields if not populated
-        place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] }).then(() => {
+        try {
+          await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+          let lat = 0;
+          let lng = 0;
+          if (place.location) {
+             if (typeof place.location.lat === 'function') {
+                lat = place.location.lat();
+                lng = place.location.lng();
+             } else {
+                lat = place.location.lat || 0;
+                lng = place.location.lng || 0;
+             }
+          }
+          
           onLocationSelect({
-            name: place.displayName || '',
+            name: place.displayName || place.name || 'Unknown Location',
             address: place.formattedAddress || '',
-            lat: place.location?.lat() || 0,
-            lng: place.location?.lng() || 0
+            lat,
+            lng
           });
+          // Reset the input so dropdown closes
+          element.value = '';
+          element.blur && element.blur();
+          
+          // Manually clean up any orphaned pac-containers just in case
+          setTimeout(() => {
+             document.querySelectorAll('.pac-container').forEach(el => el.remove());
+          }, 100);
+
           setIsOpen(false);
-        }).catch((err: any) => {
+        } catch (err) {
           console.error("Error fetching place fields", err);
-        });
+          onLocationSelect({
+            name: place.displayName || place.name || 'Unknown Location',
+            address: '',
+            lat: 0,
+            lng: 0
+          });
+          // Reset the input so dropdown closes
+          element.value = '';
+          element.blur && element.blur();
+
+          setTimeout(() => {
+             document.querySelectorAll('.pac-container').forEach(el => el.remove());
+          }, 100);
+
+          setIsOpen(false);
+        }
       });
       
       autocompleteElementRef.current = element;
@@ -80,7 +114,15 @@ export function LocationPicker({ onLocationSelect, selectedLocation }: LocationP
   return (
     <div className="relative flex items-center">
       <div ref={containerRef} className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-800 p-1 min-w-[250px]" />
-      <button type="button" onClick={() => setIsOpen(false)} className="absolute right-2 top-2 p-1 bg-white rounded-full text-neutral-500 hover:text-red-500 z-10">
+      <button type="button" onClick={() => {
+        if (autocompleteElementRef.current) {
+           autocompleteElementRef.current.value = '';
+        }
+        setTimeout(() => {
+           document.querySelectorAll('.pac-container').forEach(el => el.remove());
+        }, 100);
+        setIsOpen(false);
+      }} className="absolute right-2 top-2 p-1 bg-white rounded-full text-neutral-500 hover:text-red-500 z-10">
         <X size={16} />
       </button>
     </div>
